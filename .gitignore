@@ -1,0 +1,58 @@
+# Node modules
+node_modules/
+extension/node_modules/
+
+# Output directory for compiled files
+dist/
+
+# User-specific settings for Visual Studio Code
+.vscode/
+
+# macOS specific files
+.DS_Store
+
+# Log files
+*.log
+*.tmp
+
+# Editor swap files
+*.swp
+
+# npm and Yarn lock files (main project only)
+/package-lock.json
+yarn.lock
+
+# Coverage reports
+coverage/
+
+# Sublime Text project and workspace files (if applicable)
+*.sublime-project
+*.sublime-workspace
+
+# VS Code workspace files (if applicable)
+*.code-workspace
+
+# User-specific settings files
+*.user
+
+# npm and Yarn error logs
+npm-debug.log
+yarn-error.log
+
+# TypeScript generated files (compiled output)
+/out/
+/extension/out/
+src/**/*.js
+src/**/*.js.map
+
+# VS Code integration test artifacts
+.vscode-test/
+
+# VS Code extension packages
+*.vsix
+
+# Development context and documentation (keep local only)
+context/
+
+# Old builds and temporary files
+sf-deployer-*.vsix

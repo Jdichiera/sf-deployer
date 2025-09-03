@@ -1,0 +1,38 @@
+# --- Source files (not needed in packaged extension) ---
+src/
+*.ts
+*.map
+webpack.config.js
+tsconfig*.json
+
+# --- Tests and documentation ---
+tests/
+context/
+integrationTest/
+coverage/
+.vscode-test/
+
+# --- Development configuration ---
+.vscode/
+.github/
+.cursor/
+.eslintrc*
+.prettierrc*
+jest.config.js
+.gitignore
+.npmignore
+
+# --- Build artifacts and old files ---
+out/
+extension/
+manifests/
+node_modules/
+*.vsix
+package-lock.json
+
+# --- Keep only the bundled extension and necessary assets ---
+!dist/
+!images/
+!media/
+!LICENSE
+!README.md

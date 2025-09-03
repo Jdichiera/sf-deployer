@@ -1,0 +1,104 @@
+{
+  "name": "sf-deployer",
+  "displayName": "SF Deployer",
+  "description": "Zero-friction Salesforce deployments with visual file selection and automatic package.xml generation.",
+  "version": "0.10.0",
+  "publisher": "JeramyDichiera",
+  "author": {
+    "name": "Jeramy",
+    "url": "https://github.com/Jdichiera"
+  },
+  "homepage": "https://github.com/Jdichiera/sf-deployer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jdichiera/sf-deployer"
+  },
+  "bugs": {
+    "url": "https://github.com/Jdichiera/sf-deployer/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Deployment"
+  ],
+  "keywords": [
+    "salesforce",
+    "sf",
+    "sfdx",
+    "deployment",
+    "cli",
+    "package",
+    "metadata",
+    "apex",
+    "lightning",
+    "force",
+    "visual-deployment",
+    "package-xml",
+    "manifest-generator"
+  ],
+  "galleryBanner": {
+    "color": "#1e293b",
+    "theme": "dark"
+  },
+  "icon": "images/pallas.png",
+  "license": "MIT",
+  "dependencies": {
+    "glob": "^10.4.1"
+  },
+  "activationEvents": [
+    "onCommand:sfDeployer.openPicker"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sfDeployer.openPicker",
+        "title": "SF Deployer: Open Picker"
+      }
+    ],
+    "views": {}
+  },
+  "scripts": {
+    "build": "rm -rf node_modules dist out && npm install && npm run webpack && npm run package",
+    "build:prod": "rm -rf node_modules dist out *.vsix && npm ci --ignore-scripts && npm run webpack:prod && vsce package",
+    "webpack": "webpack --mode development",
+    "webpack:prod": "webpack --mode production --devtool hidden-source-map",
+    "watch": "webpack --mode development --watch",
+    "package": "vsce package",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "npm run webpack && jest --runInBand",
+    "refresh": "npm run format && npm run build:prod",
+    "refresh:full": "npm run lint && npm run format && npm run build:prod",
+    "version:patch": "npm version patch --no-git-tag-version && npm run refresh",
+    "version:minor": "npm version minor --no-git-tag-version && npm run refresh",
+    "version:major": "npm version major --no-git-tag-version && npm run refresh",
+    "release:patch": "npm run version:patch && npm run push:release",
+    "release:minor": "npm run version:minor && npm run push:release",
+    "release:major": "npm run version:major && npm run push:release",
+    "push:release": "git add . && git commit -m \"Release v$(node -p \"require('./package.json').version\")\" && git tag -a v$(node -p \"require('./package.json').version\") -m \"Release v$(node -p \"require('./package.json').version\")\" && git push && git push origin --tags"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.3",
+    "@types/node": "^18.0.0",
+    "@types/tmp": "^0.2.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^7.12.0",
+    "@typescript-eslint/parser": "^7.12.0",
+    "@vscode/vsce": "^3.6.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "jest": "^29.6.1",
+    "jest-environment-jsdom": "^30.1.1",
+    "prettier": "^3.3.2",
+    "ts-jest": "^29.1.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.2",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4",
+    "rimraf": "^5.0.1"
+  }
+}
