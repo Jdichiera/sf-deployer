@@ -91,7 +91,7 @@ describe('ManifestBuilder', () => {
       // Create test manifest files in a unique directory
       const testId = Math.random().toString(36).substring(7);
       const testDir = path.join(__dirname, `test-list-${testId}`);
-      const manifestsDir = path.join(testDir, 'manifests');
+      const manifestsDir = path.join(testDir, '.sf-deployer');
       await fsp.mkdir(manifestsDir, { recursive: true });
 
       await fsp.writeFile(

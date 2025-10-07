@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
 import { ManifestBuilder } from './manifestBuilder';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -47,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
             type: 'manifestList',
             manifests: manifestList,
           });
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Failed to load initial manifest list:', err);
         }
       } else {
@@ -78,7 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
             type: 'manifestList',
             manifests: manifestList,
           });
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Failed to load initial manifest list:', err);
         }
 
@@ -150,13 +149,14 @@ export function activate(context: vscode.ExtensionContext) {
               type: 'manifestList',
               manifests: manifestList,
             });
-          } catch (err: any) {
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
             panel.webview.postMessage({
               type: 'manifestError',
-              error: `Failed to save manifest: ${err.message}`,
+              error: `Failed to save manifest: ${message}`,
             });
             vscode.window.showErrorMessage(
-              `Failed to save manifest: ${err.message}`
+              `Failed to save manifest: ${message}`
             );
           }
         } else if (msg.type === 'loadManifest') {
@@ -194,13 +194,14 @@ export function activate(context: vscode.ExtensionContext) {
                 `SF Deployer: Loaded manifest "${msg.manifestName}" with ${validatedSelections.length} files`
               );
             }
-          } catch (err: any) {
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
             panel.webview.postMessage({
               type: 'manifestError',
-              error: `Failed to load manifest: ${err.message}`,
+              error: `Failed to load manifest: ${message}`,
             });
             vscode.window.showErrorMessage(
-              `Failed to load manifest: ${err.message}`
+              `Failed to load manifest: ${message}`
             );
           }
         } else if (msg.type === 'requestManifestList') {
@@ -211,7 +212,7 @@ export function activate(context: vscode.ExtensionContext) {
               type: 'manifestList',
               manifests: manifestList,
             });
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error('Failed to load manifest list:', err);
           }
         }
@@ -224,7 +225,13 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Unused function removed for cleaner code
 
-  async function runDeployWithFlags(flags: any) {
+  async function runDeployWithFlags(flags: {
+    mode?: string;
+    orgAlias?: string;
+    dryRun?: boolean;
+    testLevel?: string;
+    tests?: string[];
+  }) {
     const selected = context.workspaceState.get<string[]>(
       'sfDeployer.selected',
       []
@@ -241,8 +248,9 @@ export function activate(context: vscode.ExtensionContext) {
       const { path: builtPath, xml } = await ManifestBuilder.build(context);
       manifestPath = builtPath;
       broadcastManifest(xml);
-    } catch (err: any) {
-      vscode.window.showErrorMessage(`Manifest error: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Manifest error: ${message}`);
       return;
     }
 
@@ -260,7 +268,16 @@ export function activate(context: vscode.ExtensionContext) {
     let cmdBase = `sf project deploy ${deployMode} --manifest "${manifestPath}" --verbose`;
 
     if (flags.orgAlias) {
-      cmdBase += ` --target-org ${flags.orgAlias}`;
+      // Sanitize org alias to prevent command injection
+      // Salesforce org aliases can only contain alphanumeric, underscore, hyphen, and dot
+      const sanitizedAlias = flags.orgAlias.replace(/[^a-zA-Z0-9_.-]/g, '');
+      if (sanitizedAlias !== flags.orgAlias) {
+        vscode.window.showErrorMessage(
+          'SF Deployer: Invalid org alias format. Only alphanumeric characters, underscores, hyphens, and dots are allowed.'
+        );
+        return;
+      }
+      cmdBase += ` --target-org ${sanitizedAlias}`;
     }
     if (flags.dryRun) cmdBase += ' --dry-run';
     // if (flags.checkOnly) cmd += ' --check-only';
@@ -286,22 +303,6 @@ export function activate(context: vscode.ExtensionContext) {
           .map((p) => path.basename(p, '.cls'));
       }
       if (tests.length) {
-        // Persist tests to tests.txt for reuse
-        try {
-          const manifestsDirPath = path.join(cwd, 'manifests');
-          fs.mkdirSync(manifestsDirPath, { recursive: true });
-          fs.writeFileSync(
-            path.join(manifestsDirPath, 'manifestTests'),
-            tests.join('\n'),
-            'utf8'
-          );
-          console.log(
-            `SF Deployer: Wrote ${tests.length} test classes to tests.txt`
-          );
-        } catch (err) {
-          console.error('SF Deployer: Failed to write tests.txt', err);
-        }
-
         const testsArg = '--test-level RunSpecifiedTests --tests';
         // We'll stream the command to the terminal in chunks to avoid VSCode input limits
         const terminal = vscode.window.createTerminal({
@@ -313,9 +314,11 @@ export function activate(context: vscode.ExtensionContext) {
         // 1) send the base command and testsArg (no newline yet)
         terminal.sendText(`${cmdBase} ${testsArg}`, false);
 
-        // 2) stream each test class separated by space
+        // 2) stream each test class separated by space (sanitized to prevent injection)
         for (const t of tests) {
-          terminal.sendText(` ${t}`, false);
+          // Apex class names can only contain alphanumeric and underscore
+          const sanitizedTest = t.replace(/[^a-zA-Z0-9_]/g, '');
+          terminal.sendText(` ${sanitizedTest}`, false);
         }
 
         // 3) finally send newline to execute
@@ -379,12 +382,13 @@ export function activate(context: vscode.ExtensionContext) {
         const res = await ManifestBuilder.build(context);
         xml = res.xml;
         console.log('SF Deployer: Manifest built successfully');
-      } catch (error: any) {
-        console.error('SF Deployer: Manifest build failed:', error.message);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('SF Deployer: Manifest build failed:', message);
         // Send error message to webview
         activeWebviewPanel.webview.postMessage({
           type: 'manifestError',
-          error: `Failed to generate manifest: ${error.message}`,
+          error: `Failed to generate manifest: ${message}`,
         });
         return;
       }
@@ -398,9 +402,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {}
 
-async function buildTree(dir: string): Promise<any[]> {
+interface TreeNode {
+  name: string;
+  path: string;
+  children?: TreeNode[];
+}
+
+async function buildTree(dir: string): Promise<TreeNode[]> {
   const entries = await vscode.workspace.fs.readDirectory(vscode.Uri.file(dir));
-  const result: any[] = [];
+  const result: TreeNode[] = [];
   for (const [name, type] of entries) {
     if (name === 'node_modules' || name.startsWith('.git')) {
       continue;
@@ -433,10 +443,17 @@ async function getPickerHtml(
     'pickerTemplate.html'
   );
   let html = fs.readFileSync(templatePath, 'utf8');
-  // inject CSP nonce
+  // inject CSP nonce with improved security policy
+  const csp = [
+    "default-src 'none'",
+    `script-src 'nonce-${nonce}'`,
+    `style-src 'nonce-${nonce}' ${panel.webview.cspSource}`,
+    `img-src ${panel.webview.cspSource} data:`,
+    `font-src ${panel.webview.cspSource}`,
+  ].join('; ');
   html = html.replace(
     '<!-- CSP nonce replaced at runtime -->',
-    `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}' vscode-resource:; style-src 'unsafe-inline' vscode-resource:;" />`
+    `<meta http-equiv="Content-Security-Policy" content="${csp}" />`
   );
   html = html.replace(/__NONCE__/g, nonce);
   // Fix relative script src
@@ -447,17 +464,4 @@ async function getPickerHtml(
   // Removed codicon CSS injection as we now use emoji
   html = html.replace('pickerScript.js', scriptUri.toString());
   return html;
-}
-
-async function loadAliasesViaCli(): Promise<string[]> {
-  try {
-    const { execSync } = await import('child_process');
-    const json = execSync('sf org list --json', { encoding: 'utf8' });
-    const data = JSON.parse(json);
-    return [...data.result.nonScratchOrgs, ...data.result.scratchOrgs].map(
-      (o: any) => o.alias ?? o.username
-    );
-  } catch {
-    return [];
-  }
 }

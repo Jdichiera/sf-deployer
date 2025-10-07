@@ -25,10 +25,13 @@
     const idx = p.indexOf('/force-app/');
     return idx >= 0 ? p.slice(idx + 1) : p.split(/[/\\]/).slice(-3).join('/');
   }
+  // Escape special characters for CSS selector queries to prevent injection
+  function escapeCssSelector(str) {
+    return str.replace(/["\\]/g, '\\$&');
+  }
   // DOM refs
   const cmdPreview = document.getElementById('cmdPreview');
   const treeContainer = document.getElementById('tree');
-  const selList = document.getElementById('selList');
   const manifestPane = document.getElementById('manifestPre');
   // Remove the temporary init message once loaded
   const initMsg = document.querySelector('body > p');
@@ -232,46 +235,13 @@
     });
   }
 
+  // Selected list feature removed - users unselect in tree instead
   function updateSelectedList(selectedSet) {
-    selList.innerHTML = '';
-    [...selectedSet].forEach((p) => {
-      const li = document.createElement('li');
-      const remove = document.createElement('span');
-      remove.textContent = '✕ ';
-      remove.style.color = '#cc0000';
-      remove.style.cursor = 'pointer';
-      remove.title = 'Remove from selection';
-      remove.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const cb = treeContainer.querySelector(`input[data-path="${p}"]`);
-        if (cb) cb.checked = false;
-        vscode.postMessage({ type: 'update', path: p, selected: false });
-        updateSelectedListFromDom();
-      });
-      const textSpan = document.createElement('span');
-      textSpan.textContent = relative(p);
-      li.style.cursor = 'pointer';
-      li.title = 'Click to locate in tree';
-      li.append(remove, textSpan);
-      li.addEventListener('click', () => {
-        const cb = treeContainer.querySelector(`input[data-path="${p}"]`);
-        if (cb) {
-          cb.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          cb.focus();
-        }
-      });
-      selList.appendChild(li);
-    });
+    // No-op: feature removed
   }
 
   function updateSelectedListFromDom() {
-    const chk = treeContainer.querySelectorAll(
-      'input[data-leaf="true"]:checked'
-    );
-    const set = new Set(
-      Array.from(chk).map((c) => c.getAttribute('data-path'))
-    );
-    updateSelectedList(set);
+    // No-op: feature removed
   }
 
   const state = vscode.getState() || {};
@@ -351,7 +321,6 @@
     treeContainer
       .querySelectorAll('input[type="checkbox"]')
       .forEach((cb) => (cb.checked = false));
-    selList.innerHTML = '';
   });
 
   // --- Named Manifest Controls ---
@@ -686,7 +655,6 @@
       treeContainer
         .querySelectorAll('input[type="checkbox"]')
         .forEach((cb) => (cb.checked = false));
-      selList.innerHTML = '';
     } else if (msg.type === 'manifest') {
       console.log(
         'SF Deployer: Received manifest xml:',

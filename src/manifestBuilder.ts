@@ -6,7 +6,7 @@ import { performance } from 'perf_hooks';
 
 export class ManifestBuilder {
   /**
-   * Build package.xml from selected paths and write to manifests/package.xml.
+   * Build package.xml from selected paths and write to .sf-deployer/package.xml.
    * Very simplified mapping: handles ApexClass (.cls), ApexTrigger (.trigger), Aura and LWC bundles, and metadata XML files.
    */
   static async build(
@@ -80,7 +80,7 @@ export class ManifestBuilder {
       console.log(`SF Deployer: Extension: ${ext}, Base: ${base}`);
 
       // Detect LWC bundle (any file inside force-app/.../lwc/<bundle>/...)
-      const lwcMatch = norm.match(/\blwc\/([^\/]+)/);
+      const lwcMatch = norm.match(/\blwc\/([^/]+)/);
       if (lwcMatch) {
         const bundle = lwcMatch[1];
         types['LightningComponentBundle'] = (
@@ -89,7 +89,7 @@ export class ManifestBuilder {
         continue; // skip further checks; we already handled
       }
 
-      const auraMatch = norm.match(/\baura\/([^\/]+)/);
+      const auraMatch = norm.match(/\baura\/([^/]+)/);
       if (auraMatch) {
         const bundle = auraMatch[1];
         types['AuraDefinitionBundle'] = (
@@ -108,7 +108,7 @@ export class ManifestBuilder {
       }
 
       // Flow detection before generic meta skip
-      const flowMeta = norm.match(/\/flows\/([^\/]+)\.flow-meta\.xml$/);
+      const flowMeta = norm.match(/\/flows\/([^/]+)\.flow-meta\.xml$/);
       if (flowMeta) {
         const flowName = flowMeta[1];
         (types['Flow'] = types['Flow'] || new Set()).add(flowName);
@@ -179,7 +179,7 @@ export class ManifestBuilder {
         norm.includes('/objects/') &&
         !norm.includes('/fields/')
       ) {
-        const objectMatch = norm.match(/\/objects\/([^\/]+)\.xml$/);
+        const objectMatch = norm.match(/\/objects\/([^/]+)\.xml$/);
         if (objectMatch) {
           let objName = objectMatch[1];
           // Remove common suffixes that might be in filename but not needed in manifest
@@ -203,7 +203,7 @@ export class ManifestBuilder {
       ) {
         console.log(`SF Deployer: Checking field pattern for: ${norm}`);
         const match = norm.match(
-          /\/objects\/([^\/]+)\/fields\/([^\/]+)\.field-meta\.xml$/
+          /\/objects\/([^/]+)\/fields\/([^/]+)\.field-meta\.xml$/
         );
         if (match) {
           const obj = match[1];
@@ -222,7 +222,7 @@ export class ManifestBuilder {
       // Support fields without meta suffix
       if (ext === '.field' && norm.includes('/fields/')) {
         const fieldMatch = norm.match(
-          /\/objects\/([^\/]+)\/fields\/([^\/]+)\.field$/
+          /\/objects\/([^/]+)\/fields\/([^/]+)\.field$/
         );
         if (fieldMatch) {
           const obj = fieldMatch[1];
@@ -239,7 +239,7 @@ export class ManifestBuilder {
       // Fallback for any field file in /fields/ directory
       if (ext === '.xml' && norm.includes('/fields/')) {
         const generalFieldMatch = norm.match(
-          /\/([^\/]+)\/fields\/([^\/]+)\.xml$/
+          /\/([^/]+)\/fields\/([^/]+)\.xml$/
         );
         if (generalFieldMatch) {
           const obj = generalFieldMatch[1];
@@ -276,7 +276,7 @@ export class ManifestBuilder {
         continue;
       }
       // Flow via file or meta
-      const flowMatch = norm.match(/\/flows\/([^\/]+)\.flow/);
+      const flowMatch = norm.match(/\/flows\/([^/]+)\.flow/);
       if (flowMatch) {
         const flowName = flowMatch[1];
         (types['Flow'] = types['Flow'] || new Set()).add(flowName);
@@ -330,7 +330,7 @@ export class ManifestBuilder {
     const workspaceRoot =
       vscode.workspace.workspaceFolders?.[0].uri.fsPath ||
       context.extensionPath;
-    const manifestsDir = path.join(workspaceRoot, 'manifests');
+    const manifestsDir = path.join(workspaceRoot, '.sf-deployer');
     await fsp.mkdir(manifestsDir, { recursive: true });
     const manifestPath = path.join(manifestsDir, 'package.xml');
 
@@ -375,17 +375,27 @@ export class ManifestBuilder {
     const workspaceRoot =
       vscode.workspace.workspaceFolders?.[0].uri.fsPath ||
       context.extensionPath;
-    const manifestsDir = path.join(workspaceRoot, 'manifests');
+    const manifestsDir = path.join(workspaceRoot, '.sf-deployer');
     await fsp.mkdir(manifestsDir, { recursive: true });
 
     // Create manifest with custom name
     const sanitizedName = manifestName.replace(/[^a-zA-Z0-9._-]/g, '_');
     const manifestPath = path.join(manifestsDir, `${sanitizedName}.xml`);
 
+    // Validate path to prevent directory traversal
+    const resolvedPath = path.resolve(manifestPath);
+    const resolvedDir = path.resolve(manifestsDir);
+    if (!resolvedPath.startsWith(resolvedDir + path.sep)) {
+      throw new Error('Invalid manifest path: directory traversal detected');
+    }
+
+    // Escape XML comment content to prevent injection
+    const escapeXmlComment = (str: string) => str.replace(/--/g, '- -');
+
     // Save manifest with metadata header
-    const manifestContent = `<!-- SF Deployer Named Manifest: ${manifestName} -->
+    const manifestContent = `<!-- SF Deployer Named Manifest: ${escapeXmlComment(manifestName)} -->
 <!-- Created: ${new Date().toISOString()} -->
-<!-- Selected Paths: ${JSON.stringify(selected)} -->
+<!-- Selected Paths: ${escapeXmlComment(JSON.stringify(selected))} -->
 ${xml}`;
 
     await fsp.writeFile(manifestPath, manifestContent);
@@ -410,7 +420,7 @@ ${xml}`;
     const workspaceRoot =
       vscode.workspace.workspaceFolders?.[0].uri.fsPath ||
       context.extensionPath;
-    const manifestsDir = path.join(workspaceRoot, 'manifests');
+    const manifestsDir = path.join(workspaceRoot, '.sf-deployer');
 
     // Apply same sanitization as save method
     const sanitizedName = manifestName.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -520,7 +530,7 @@ ${xml}`;
     const workspaceRoot =
       vscode.workspace.workspaceFolders?.[0].uri.fsPath ||
       context.extensionPath;
-    const manifestsDir = path.join(workspaceRoot, 'manifests');
+    const manifestsDir = path.join(workspaceRoot, '.sf-deployer');
 
     try {
       const files = await fsp.readdir(manifestsDir);

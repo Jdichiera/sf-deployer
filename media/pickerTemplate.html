@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <!-- CSP nonce replaced at runtime -->
     <title>SF Deployer Picker</title>
-    <style>
+    <style nonce="__NONCE__">
       body {
         font-family: sans-serif;
         display: flex;
@@ -94,110 +94,28 @@
         style="width: 100%; padding: 4px; box-sizing: border-box"
       />
     </div>
-    <div class="controls" style="display: flex; gap: 20px">
-      <!-- Main Picker Controls -->
+    <!-- Deployment Controls -->
+    <div class="controls">
       <div
-        style="
-          flex: 2;
-          display: flex;
-          gap: 16px;
-          align-items: center;
-          flex-wrap: wrap;
-          border-right: 1px solid #555;
-          padding-right: 20px;
-        "
+        class="flags"
+        style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap"
       >
-        <div
-          class="flags"
-          style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap"
+        <label><input type="checkbox" id="dryRun" /> Dry-run</label>
+        <label>Tests:</label>
+        <label
+          ><input type="radio" name="testLevel" value="all" /> Run All</label
         >
-          <label><input type="checkbox" id="dryRun" /> Dry-run</label>
-          <label>Tests:</label>
-          <label
-            ><input type="radio" name="testLevel" value="all" /> Run All</label
-          >
-          <label
-            ><input type="radio" name="testLevel" value="none" checked /> No
-            Tests</label
-          >
-          <label
-            ><input type="radio" name="testLevel" value="specified" /> Run
-            Specified</label
-          >
-        </div>
-        <button id="deployBtn">Deploy</button>
-        <button id="clearBtn">Clear All</button>
+        <label
+          ><input type="radio" name="testLevel" value="none" checked /> No
+          Tests</label
+        >
+        <label
+          ><input type="radio" name="testLevel" value="specified" /> Run
+          Specified</label
+        >
       </div>
-
-      <!-- Manifest Controls -->
-      <div
-        class="manifest-controls"
-        style="
-          flex: 1;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding-left: 20px;
-        "
-      >
-        <input
-          id="manifestName"
-          type="text"
-          placeholder="Manifest name..."
-          style="
-            width: 120px;
-            padding: 4px;
-            border: 1px solid #555;
-            background: #2d2d30;
-            color: #cccccc;
-            border-radius: 2px;
-            font-size: 12px;
-          "
-          maxlength="50"
-        />
-        <button
-          id="saveManifestBtn"
-          style="
-            padding: 4px 8px;
-            background: #007acc;
-            color: white;
-            border: none;
-            border-radius: 2px;
-            cursor: pointer;
-            font-size: 12px;
-          "
-        >
-          Save
-        </button>
-        <select
-          id="manifestDropdown"
-          style="
-            width: 120px;
-            padding: 4px;
-            border: 1px solid #555;
-            background: #2d2d30;
-            color: #cccccc;
-            border-radius: 2px;
-            font-size: 12px;
-          "
-        >
-          <option value="">-- Select manifest --</option>
-        </select>
-        <button
-          id="loadManifestBtn"
-          style="
-            padding: 4px 8px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 2px;
-            cursor: pointer;
-            font-size: 12px;
-          "
-        >
-          Load
-        </button>
-      </div>
+      <button id="deployBtn">Deploy</button>
+      <button id="clearBtn">Clear All</button>
     </div>
 
     <div class="main">
@@ -205,8 +123,78 @@
         <p id="loading">Loading file tree...</p>
         <div id="tree"></div>
       </div>
-      <ul id="selList" style="display: none"></ul>
       <div id="manifestPane">
+        <!-- Manifest Controls -->
+        <div
+          class="manifest-controls"
+          style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #555;
+            flex-wrap: wrap;
+          "
+        >
+          <input
+            id="manifestName"
+            type="text"
+            placeholder="Manifest name..."
+            style="
+              width: 140px;
+              padding: 6px;
+              border: 1px solid #555;
+              background: #2d2d30;
+              color: #cccccc;
+              border-radius: 2px;
+              font-size: 12px;
+            "
+            maxlength="50"
+          />
+          <button
+            id="saveManifestBtn"
+            style="
+              padding: 6px 12px;
+              background: #007acc;
+              color: white;
+              border: none;
+              border-radius: 2px;
+              cursor: pointer;
+              font-size: 12px;
+            "
+          >
+            Save
+          </button>
+          <select
+            id="manifestDropdown"
+            style="
+              width: 160px;
+              padding: 6px;
+              border: 1px solid #555;
+              background: #2d2d30;
+              color: #cccccc;
+              border-radius: 2px;
+              font-size: 12px;
+            "
+          >
+            <option value="">-- Select manifest --</option>
+          </select>
+          <button
+            id="loadManifestBtn"
+            style="
+              padding: 6px 12px;
+              background: #28a745;
+              color: white;
+              border: none;
+              border-radius: 2px;
+              cursor: pointer;
+              font-size: 12px;
+            "
+          >
+            Load
+          </button>
+        </div>
         <h4>Manifest Preview</h4>
         <pre
           id="manifestPre"

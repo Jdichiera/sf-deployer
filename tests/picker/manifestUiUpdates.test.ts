@@ -73,7 +73,7 @@ describe('picker webview manifest UI updates', () => {
           data: {
             type: 'manifestSaved',
             manifestName: 'test-manifest',
-            path: '/workspace/manifests/test-manifest.xml',
+            path: '/workspace/.sf-deployer/test-manifest.xml',
           },
         })
       );

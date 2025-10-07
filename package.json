@@ -2,7 +2,7 @@
   "name": "sf-deployer",
   "displayName": "SF Deployer",
   "description": "Zero-friction Salesforce deployments with visual file selection and automatic package.xml generation.",
-  "version": "0.10.0",
+  "version": "0.13.0",
   "publisher": "JeramyDichiera",
   "author": {
     "name": "Jeramy",
