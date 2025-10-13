@@ -361,6 +361,16 @@ export function activate(context: vscode.ExtensionContext) {
       return; // No active webview to broadcast to
     }
 
+    // Guard: if there is no open workspace, inform the webview and bail out
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders?.length) {
+      activeWebviewPanel.webview.postMessage({
+        type: 'manifestError',
+        error: 'No workspace folder open.',
+      });
+      return;
+    }
+
     if (!xml) {
       try {
         const selected = context.workspaceState.get<string[]>(

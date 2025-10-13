@@ -114,8 +114,60 @@ export class ManifestBuilder {
         (types['Flow'] = types['Flow'] || new Set()).add(flowName);
         continue;
       }
+      // Record Type detection (per-object record types)
+      // Pattern: /objects/<ObjectApiName>/recordTypes/<RecordTypeName>.recordType-meta.xml
+      if (ext === '.xml') {
+        const recTypeRegex =
+          /\/objects\/([^/]+)\/recordTypes\/([^/]+)\.recordType-meta\.xml$/i;
+        const rec = norm.match(recTypeRegex);
+        if (rec) {
+          const objectName = rec[1];
+          const recordTypeName = rec[2];
+          types['RecordType'] = (types['RecordType'] || new Set()).add(
+            `${objectName}.${recordTypeName}`
+          );
+          continue;
+        }
+      }
       if (ext === '.flow') {
         (types['Flow'] = types['Flow'] || new Set()).add(base);
+        continue;
+      }
+
+      // EmailTemplate
+      if (ext === '.email') {
+        types['EmailTemplate'] = (types['EmailTemplate'] || new Set()).add(
+          base
+        );
+        continue;
+      }
+      // StaticResource
+      if (ext === '.resource') {
+        types['StaticResource'] = (types['StaticResource'] || new Set()).add(
+          base
+        );
+        continue;
+      }
+      // Document
+      if (ext === '.document') {
+        types['Document'] = (types['Document'] || new Set()).add(base);
+        continue;
+      }
+      // Report
+      if (ext === '.report') {
+        types['Report'] = (types['Report'] || new Set()).add(base);
+        continue;
+      }
+      // Dashboard
+      if (ext === '.dashboard') {
+        types['Dashboard'] = (types['Dashboard'] || new Set()).add(base);
+        continue;
+      }
+      // CustomMetadata
+      if (ext === '.mdt') {
+        types['CustomMetadata'] = (types['CustomMetadata'] || new Set()).add(
+          base
+        );
         continue;
       }
 
